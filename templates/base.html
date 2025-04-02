@@ -1,0 +1,12 @@
+<!doctype html>
+<html>
+  <head>
+    <title>{{ title }}</title>
+  </head>
+  <body>
+    {%1 for section in sections %}
+    <h2>{{ section.name }}</h2>
+    <p>{{ section.content }}</p>
+    {%1 endfor %}
+  </body>
+</html>

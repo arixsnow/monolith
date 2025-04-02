@@ -3,8 +3,6 @@ monolith
 __pycache__
 debug.txt
 template.html
+portfolio.html
 content/portfolio.yaml
 assets
-templates
-output
-content

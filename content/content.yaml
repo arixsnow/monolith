@@ -1,0 +1,10 @@
+outpath: "output"
+template_path: "templates"
+template: "base.html"
+render: "index.html"
+title: "My Static Site"
+sections:
+  - name: "Home"
+    content: "Welcome to my site!"
+  - name: "About"
+    content: "This is a static site generator."
