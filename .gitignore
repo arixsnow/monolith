@@ -1,0 +1,10 @@
+monolith
+.ropeproject
+__pycache__
+debug.txt
+template.html
+content/portfolio.yaml
+assets
+templates
+output
+content
