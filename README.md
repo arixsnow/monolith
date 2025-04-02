@@ -1,7 +1,7 @@
 # Monolith - A Minimalistic Static Site Generator
 
 ## Overview
-**Monolith** is a lightweight static site generator that compiles Markdown-based content into a structured HTML website using a flexible template engine. It enables users to create dynamic templates with conditional rendering, loops, and variable substitution.
+**Monolith** is a lightweight static site generator that compiles YAML-based content into a structured HTML website using a flexible template engine. It enables users to create dynamic templates with conditional rendering, loops, and variable substitution.
 
 ## Features
 - **Template Rendering**: Supports variable substitution, conditionals, loops, and includes.
@@ -9,7 +9,7 @@
 - **Customizable Templates**: Allows users to create their own HTML templates with embedded logic.
 
 ## Installation
-Ensure you have Python installed (>=3.7). Clone the repository and install the dependencies:
+Ensure you have Python installed (>=3). Clone the repository and install the dependencies:
 
 ```sh
 $ git clone https://github.com/yourusername/monolith.git
