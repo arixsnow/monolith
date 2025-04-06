@@ -14,7 +14,7 @@ class Monolith:
         with open(template_path, "r") as f:
             template = f.read()
 
-        # template = self._process_includes(template)
+        template = self._process_includes(template)
 
         template = self._process_conditionals(template, context)
 
@@ -67,6 +67,8 @@ class Monolith:
         var_path = parts[0].strip().split('.')
         default = None
 
+        if var_name.isalnum() or re.fullmatch(r'"\w*"', var_name):
+            return var_name
 
         if len(parts) > 1 and 'default:' in parts[1]:
             default = parts[1].split('default:')[1].strip().strip('"').strip("'")
@@ -98,6 +100,7 @@ class Monolith:
                 '<': num_var < num_comp
             }.get(operator, False)
         except (ValueError, TypeError):
+            # print(var_value, operator, comparison_value)
             str_var = str(var_value).lower()
             str_comp = str(comparison_value).strip('"\'').lower()
             return {
@@ -106,34 +109,27 @@ class Monolith:
             }.get(operator, False)
 
     def _process_conditionals(self, template, context, depth=1):
-        """Handle {%1 if condition %}...{%1 endif %} blocks with nested resolution."""
+        """Handle {%n if condition %}...{%n endif %} blocks with optional elseif and else."""
 
         def eval_condition(condition, ctx):
-            """Evaluate complex conditions with comparison operators"""
-
+            """Evaluate complex conditions with comparison operators."""
             if condition.lower() in ['true', 'false']:
                 return condition.lower() == 'true'
-
-
             operators = ['==', '!=', '>=', '<=', '>', '<']
             for op in operators:
-                if op not in condition:
-                    continue
+                if op in condition:
+                    left, right = condition.split(op, 1)
+                    left_val = self._resolve_value(left.strip(), ctx)
+                    right_val = self._resolve_value(right.strip(), ctx)
+                    return self._compare_values(left_val, op, right_val)
+            return bool(self._resolve_value(condition.strip(), ctx))
 
-                # if op in condition:
-                left, right = condition.split(op, 1)
-                left_val = self._resolve_value(left.strip(), ctx)
-                right_val = self._resolve_value(right.strip(), ctx)
-                return self._compare_values(left_val, op, right_val)
-
-            return bool(self._resolve_value(condition, ctx))
-
+        # Pattern to match {%n if ... %} ... {%n endif %} (including nested blocks)
         pattern = re.compile(
             r'\{%(\d+)\s+if\s+(.*?)\s*%\}(.*?)\{%\1\s+endif\s*%\}',
             re.DOTALL
         )
 
-        # Process from innermost to outermost
         while True:
             matches = list(pattern.finditer(template))
             if not matches:
@@ -141,14 +137,48 @@ class Monolith:
 
             for match in reversed(matches):
                 full_block = match.group(0)
-                k, condition, block = match.groups()
+                block_id = match.group(1)
+                if_condition = match.group(2)
+                full_body = match.group(3)
 
-                processed_block = self._process_conditionals(block, context, depth + 1)
+                # Recursively process any nested conditionals
+                full_body = self._process_conditionals(full_body, context, depth + 1)
 
-                if eval_condition(condition, context):
-                    template = template.replace(full_block, processed_block, 1)
-                else:
-                    template = template.replace(full_block, '', 1)
+                # Split the full_body into parts.
+                # The first part (before any elseif/else tokens) belongs to the original if.
+                # The pattern splits on tokens like {%<id> elseif ... %} or {%<id> else %}.
+                token_pattern = re.compile(
+                    rf'(\{{%{block_id}\s*(?:elseif\s+.*?|else)\s*%\}})'
+                )
+                tokens = token_pattern.split(full_body)
+
+                # tokens[0] is always the body of the "if"
+                parts = []
+                parts.append(("if", if_condition, tokens[0]))
+
+                # process any following elseif/else tokens
+                idx = 1
+                while idx < len(tokens):
+                    token = tokens[idx]
+                    # token may be an elseif or else
+                    if 'elseif' in token:
+                        m = re.search(r'elseif\s+(.*?)\s*%', token)
+                        cond = m.group(1) if m else ""
+                        body = tokens[idx+1] if idx+1 < len(tokens) else ""
+                        parts.append(("elseif", cond, body))
+                    elif 'else' in token:
+                        body = tokens[idx+1] if idx+1 < len(tokens) else ""
+                        parts.append(("else", None, body))
+                    idx += 2
+
+                replacement = ''
+                for block_type, cond, body in parts:
+                    # print(block_type)
+                    if block_type == "else" or eval_condition(cond, context):
+                        replacement = body
+                        break
+
+                template = template.replace(full_block, replacement, 1)
 
         return template
 

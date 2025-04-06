@@ -22,7 +22,7 @@ def parse_yaml(filepath):
 
     return None
 
-def generate_site(configfname = 'content.yaml'):
+def generate_site(configfname='content.yaml'):
 
     # find the yaml find and load it
     filepath = Path("content") / configfname
@@ -53,9 +53,9 @@ def generate_site(configfname = 'content.yaml'):
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(rendered_html)
-        print(f"Site generated successfully...\nFile saved at: {output_path}")
+        print(f"Rendering completed successfully...\nFile saved at: {output_path}")
     except Exception as e:
-        print(f"Site generation failed!\nError: Could not write to file '{output_path}': {e}")
+        print(f"Rendering failed!\nError: Could not write to file '{output_path}': {e}")
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
